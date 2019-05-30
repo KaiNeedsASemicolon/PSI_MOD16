@@ -6,10 +6,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
-import android.widget.Toast;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 
 public class DatabaseHandler extends SQLiteOpenHelper {
 
@@ -24,7 +22,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     public static final String COLUMN_NAME_GPS_LAT = "gps_lat";
 
     public DatabaseHandler(Context context) {
-        super(context, DATABASE_NAME, null, 3);
+        super(context, DATABASE_NAME, null, 4);
     }
 
 
@@ -79,6 +77,28 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery("select * from "+TABLE_NAME, null);
 
         return cursor;
+    }
+
+    public ArrayList<String> getli(){
+        Log.w(TAG, "Reaches beginning of getli method");
+        String path = null;
+        ArrayList<String> stringList = new ArrayList<>();
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("select * from images", null);
+        cursor.moveToFirst();
+        while(!cursor.isAfterLast()){
+            path = new String(cursor.getString(2));
+            stringList.add(path);
+            cursor.moveToNext();
+        }
+        Log.w(TAG, "Reaches return personList");
+        return stringList;
+    }
+
+    public Cursor getListContents(){
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor data = db.rawQuery("SELECT "+ COLUMN_NAME_IMG_PATH + " FROM " + TABLE_NAME, null);
+        return data;
     }
 
 }

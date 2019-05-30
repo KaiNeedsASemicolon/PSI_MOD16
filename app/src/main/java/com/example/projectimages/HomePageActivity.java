@@ -22,12 +22,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,12 +35,13 @@ import java.util.Date;
 
 import static android.os.Environment.getExternalStoragePublicDirectory;
 
-public class MainActivity extends AppCompatActivity {
+public class HomePageActivity extends AppCompatActivity {
 
     DatabaseHandler myDb;
     Button btnTakePic;
     ImageView imageView;
     String pathToFile = "";
+    TextView logout;
     private static final String TAG = "MainActiviy";
     private static final int ERROR_DIALOG_REQUEST = 9001;
 
@@ -51,11 +51,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         myDb = new DatabaseHandler(this);
         btnTakePic = findViewById(R.id.btnTakePic);
+        logout = findViewById(R.id.tvLogout);
+        imageView = findViewById(R.id.image);
+
         if (Build.VERSION.SDK_INT >= 23) {
             requestPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 2);
         }
         if (isServicesOK()) {
-            init();
+            initMap();
+            initList();
         }
 
         btnTakePic.setOnClickListener(new View.OnClickListener() {
@@ -65,7 +69,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        imageView = findViewById(R.id.image);
+        logout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(HomePageActivity.this, LoginActivity.class));
+                LoginActivity.userID = -1;
+            }
+        });
     }
 
     @Override
@@ -80,34 +90,46 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void init(){
+    private void initMap() {
         Button btnMap = findViewById(R.id.btnMap);
         btnMap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, MapActivity.class);
+                Intent intent = new Intent(HomePageActivity.this, MapActivity.class);
                 startActivity(intent);
             }
         });
     }
 
+    private void initList() {
+        Button btnMap = findViewById(R.id.btnList);
+        Log.w(TAG, "Before");
+        btnMap.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(HomePageActivity.this, ViewListContents.class);
+                startActivity(intent);
+                Log.w(TAG, "After");
+            }
+        });
+    }
 
-    public boolean isServicesOK(){
+
+    public boolean isServicesOK() {
         Log.d(TAG, "isServicesOK: checking google services version");
 
-        int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(MainActivity.this);
+        int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(HomePageActivity.this);
 
-        if(available == ConnectionResult.SUCCESS){
+        if (available == ConnectionResult.SUCCESS) {
             //everything is fine and the user can make map requests
             Log.d(TAG, "isServicesOK: Google Play Services is working");
             return true;
-        }
-        else if(GoogleApiAvailability.getInstance().isUserResolvableError(available)){
+        } else if (GoogleApiAvailability.getInstance().isUserResolvableError(available)) {
             //an error occured but we can resolve it
             Log.d(TAG, "isServicesOK: an error occured but we can fix it");
-            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(MainActivity.this, available, ERROR_DIALOG_REQUEST);
+            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(HomePageActivity.this, available, ERROR_DIALOG_REQUEST);
             dialog.show();
-        }else{
+        } else {
             Toast.makeText(this, "You can't make map requests", Toast.LENGTH_SHORT).show();
         }
         return false;
@@ -122,7 +144,8 @@ public class MainActivity extends AppCompatActivity {
             photoFile = createPhotoFile();
             if (photoFile != null) {
                 pathToFile = photoFile.getAbsolutePath();
-                Uri photoURI = FileProvider.getUriForFile(MainActivity.this, "com.example.projectimages.fileprovider", photoFile);
+                Uri photoURI = FileProvider.getUriForFile(HomePageActivity.this,
+                        "com.example.projectimages.fileprovider", photoFile);
                 takePic.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
                 startActivityForResult(takePic, 1);
             }
@@ -142,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
         return image;
     }
 
-    private void locationGetter(){
+    private void locationGetter() {
         LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
@@ -159,5 +182,4 @@ public class MainActivity extends AppCompatActivity {
 
         myDb.insertData(pathToFile, lat, longe);
     }
-
 }
